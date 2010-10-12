@@ -1,0 +1,203 @@
+<?php
+/**
+ * Z framework
+ * basic pure PHP Implementation
+ *
+ * v 1.0.0
+ *
+ * (c) 2010 Cedric MORIN
+ * GPL3 Licence
+ *
+ *
+ */
+
+
+/**
+ * Z class
+ *
+ * @author cedric
+ */
+class Z {
+	protected static $default="dist";
+
+	// default block list
+	// body is not allowed as block name
+	protected static  $blocks = array('content','header','nav','aside','footer','head');
+	protected static  $path=array();
+	protected static  $ext = ".php";
+	protected static  $pageName = null;
+	protected static  $ajaxBlock = null;
+	protected static  $error = "";
+	
+	public function Z($blocks=array(),$path=array(),$extension = "php"){
+		if ($blocks)
+			Z::setBlocks($blocks);
+		Z::setPath($path);
+		Z::$ext = ".".trim(ltrim($extension,'.'));
+	}
+
+	public static function getPageFile($name, $ajaxBlock = null) {
+		if (Z::$pageName)
+			return Z::returnError("Error : currently processing page ".Z::$pageName.". Can't process page $name");
+		Z::$pageName = $name;
+
+		if ($ajaxBlock) {
+		  if (in_array($ajaxBlock,  Z::$blocks)) {
+				Z::$ajaxBlock = $ajaxBlock;
+			}
+			else {
+				return Z::returnError("Error : unknown block in ajax mode");
+			}
+			return Z::findInPath("ajax". Z::$ext);
+		}
+
+		return Z::findInPath("page". Z::$ext);
+	}
+
+	public static function getFile($block=null) {
+		if (!Z::$pageName)
+			return Z::returnError("Error : not currently processing any page");
+		if (!$block AND !($block = Z::$ajaxBlock))
+			return Z::returnError("Error : no block defined");
+
+		if ($block == 'body')
+			return Z::findInPath("body".Z::$ext);
+
+		if (!in_array($block,  Z::$blocks))
+			return Z::returnError("Error : block $block is not allowed");
+
+		// try to find block for current page
+		if ($f = Z::findInPath("$block/".Z::$pageName.Z::$ext,false))
+			return $f;
+
+		// if not found and content block then 404 content
+		if ($block==reset(Z::$blocks))
+			return Z::findInPath("$block/404".Z::$ext);
+
+		return Z::findInPath("$block/".Z::$default.Z::$ext);
+	}
+
+	public static function getError() {
+		return Z::$error;
+	}
+	/**
+	 * Return error filename, that will display current error
+	 * @param string $message
+	 * @return string
+	 */
+	protected static function returnError($message){
+		Z::$error = $message;
+		return Z::findInPath("error".Z::$ext);
+	}
+
+	/**
+	 * Get name of the page beeing processed
+	 * @return string
+	 */
+	public static function getPageName() { return Z::$pageName; }
+
+
+	/**
+	 * Set blocks list
+	 * First block is content block that drives page construction
+	 * order of others blocks has no effect
+	 *
+	 * 'head' is allways append to blocks if not listed
+	 *
+	 * @param array $blocks
+	 *	array('content','header','aside',footer');
+	 * @return void
+	 */
+	public static function setBlocks($blocks){
+		if (!is_array($blocks))
+			return false;
+		Z::$blocks = array();
+		while($b = array_shift($blocks)){
+			$b = trim(rtrim($b,'/'));
+			# / not allowed in block names. Explode en take first segment
+			$b = explode('/',$b);
+			$b = reset($b);
+			// body is not allowed as block name
+			if ($b!=='body')
+				Z::$blocks[] = $b;
+		}
+		if (!in_array('head',  Z::$blocks))
+			Z::$blocks[] = 'head';
+	}
+
+
+
+	/**
+	 * Find file in path !
+	 * @param string $file
+	 * @return string
+	 */
+	protected static function findInPath($file, $display_error=true){
+		foreach(Z::$path as $p) {
+			if (file_exists($f = $p . $file))
+				return $f;
+		}
+		return $display_error?Z::returnError("$file not found"):"";
+	}
+
+	/**
+	 * Get path used for block file search
+	 * First path in array has the highest priority
+	 *
+	 * @return array
+	 */
+	public static function getPath(){ return Z::$path; }
+
+	/**
+	 * Set path list for block file search
+	 * Return current path after setting
+	 * 
+	 * @param array/string $path
+	 * @return array
+	 */
+	public static function setPath($path){
+		Z::$path = array();
+		Z::prependPath(dirname(__FILE__));
+		return Z::prependPath($path);
+	}
+
+	/**
+	 * Prepend path dirs to current path
+	 * Return current path after setting
+	 *
+	 * @param array/string $path
+	 * @return array
+	 */
+	public static function prependPath($path){
+		if (is_array($path))
+			while($p = array_pop($path))
+				Z::prependPath($p);
+		else {
+			$path = trim(rtrim($path,'/'));
+			if (is_dir($path))
+			 array_unshift (Z::$path,"$path/");
+		}
+		return Z::$path;
+	}
+
+	/**
+	 * Append path dirs to current path
+	 * Return current path after setting
+	 *
+	 * @param array/string $path
+	 * @return array
+	 */
+	public static function appendPath($path){
+		if (is_array($path))
+			while($p = array_shift($path))
+				Z::appendPath($p);
+		else {
+			$path = trim(rtrim($path,'/'));
+			if (is_dir($path))
+			 array_push (Z::$path,"$path/");
+		}
+		return Z::$path;
+	}
+
+}
+?>
