@@ -1,9 +1,7 @@
 <?php
 /**
- * Z framework
+ * Z HTML framework
  * basic pure PHP Implementation
- *
- * v 1.0.0
  *
  * (c) 2010 Cedric MORIN
  * GPL3 Licence
@@ -18,6 +16,7 @@
  * @author cedric
  */
 class Z {
+	protected static $version="1.0.0";
 	protected static $default="dist";
 
 	// default block list
