@@ -27,7 +27,21 @@ class Z {
 	protected static  $pageName = null;
 	protected static  $ajaxBlock = null;
 	protected static  $error = "";
-	
+
+	/**
+	 * Constructor
+	 *
+	 * @param array $blocks
+	 *	list of blocks. If none given default is array('content','header','nav','aside','footer','head')
+	 *
+	 * @param array $path
+	 *	list of dir path. Automaticaly append path of this file to find page/ajax/error files
+	 *
+	 * @param string $extension
+	 *  optional extension for file finding. Default is 'php'.
+	 *  If different, you need to provide page/ajax/error files with suitable extension
+	 * 
+	 */
 	public function Z($blocks=array(),$path=array(),$extension = "php"){
 		if ($blocks)
 			Z::setBlocks($blocks);
@@ -35,6 +49,14 @@ class Z {
 		Z::$ext = ".".trim(ltrim($extension,'.'));
 	}
 
+	/**
+	 * Entry point, to get page file to include, given page name
+	 * and optionnal ajax block requested
+	 *
+	 * @param string $name
+	 * @param string $ajaxBlock
+	 * @return string
+	 */
 	public static function getPageFile($name, $ajaxBlock = null) {
 		if (Z::$pageName)
 			return Z::returnError("Error : currently processing page ".Z::$pageName.". Can't process page $name");
@@ -53,6 +75,14 @@ class Z {
 		return Z::findInPath("page". Z::$ext);
 	}
 
+	/**
+	 * Method used for block inclusion in page.php and body.php
+	 *
+	 * @param string $block
+	 *	block name. If none given, ajaxblock is assumed. Error if none set.
+	 *
+	 * @return string
+	 */
 	public static function getFile($block=null) {
 		if (!Z::$pageName)
 			return Z::returnError("Error : not currently processing any page");
@@ -76,11 +106,16 @@ class Z {
 		return Z::findInPath("$block/".Z::$default.Z::$ext);
 	}
 
+	/**
+	 * Retrieve Error message
+	 * @return string
+	 */
 	public static function getError() {
 		return Z::$error;
 	}
+
 	/**
-	 * Return error filename, that will display current error
+	 * Return error filename, that will display current error message
 	 * @param string $message
 	 * @return string
 	 */
