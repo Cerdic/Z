@@ -16,7 +16,7 @@
  * @author cedric
  */
 class Z {
-	protected static $version="1.0.0";
+	protected static $version="1.1.0";
 	protected static $default="dist";
 
 	// default block list
@@ -80,23 +80,36 @@ class Z {
 	 *
 	 * @param string $block
 	 *	block name. If none given, ajaxblock is assumed. Error if none set.
-	 *
+	 *	can be a block name solely, current page assumed
+	 *  or can be block/pagename
 	 * @return string
 	 */
 	public static function getFile($block=null) {
-		if (!Z::$pageName)
-			return Z::returnError("Error : not currently processing any page");
+		$pageName = Z::$pageName;
+		$name = explode("/",$name);
+		if (count($name)==2)
+			$pageName = end($name);
+		$name = reset($name);
+
+		if (!$pageName)
+			return Z::returnError("Error : not currently processing any page, pagename must be defined");
 		if (!$block AND !($block = Z::$ajaxBlock))
 			return Z::returnError("Error : no block defined");
 
-		if ($block == 'body')
+		if ($block == 'body') {
+			// if dedicated body-pagename for this pagename,
+			// use it instead of general body structure
+			if ($f = Z::findInPath("body-$pageName".Z::$ext,false))
+				return $f;
+			// else return general body structure
 			return Z::findInPath("body".Z::$ext);
+		}
 
 		if (!in_array($block,  Z::$blocks))
 			return Z::returnError("Error : block $block is not allowed");
 
 		// try to find block for current page
-		if ($f = Z::findInPath("$block/".Z::$pageName.Z::$ext,false))
+		if ($f = Z::findInPath("$block/$pageName".Z::$ext,false))
 			return $f;
 
 		// if not found and content block then 404 content
@@ -148,7 +161,7 @@ class Z {
 		Z::$blocks = array();
 		while($b = array_shift($blocks)){
 			$b = trim(rtrim($b,'/'));
-			# / not allowed in block names. Explode en take first segment
+			# / not allowed in block names. Explode to take first segment
 			$b = explode('/',$b);
 			$b = reset($b);
 			// body is not allowed as block name
