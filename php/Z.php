@@ -16,7 +16,7 @@
  * @author cedric
  */
 class Z {
-	protected static $version="1.1.0";
+	protected static $version="1.1.1";
 	protected static $default="dist";
 
 	// default block list
@@ -86,10 +86,10 @@ class Z {
 	 */
 	public static function getFile($block=null) {
 		$pageName = Z::$pageName;
-		$name = explode("/",$name);
-		if (count($name)==2)
-			$pageName = end($name);
-		$name = reset($name);
+		$block = explode("/",$block);
+		if (count($block)==2)
+			$pageName = end($block);
+		$block = reset($block);
 
 		if (!$pageName)
 			return Z::returnError("Error : not currently processing any page, pagename must be defined");
